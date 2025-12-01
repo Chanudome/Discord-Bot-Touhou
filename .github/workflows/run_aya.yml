@@ -1,18 +1,15 @@
-# ไฟล์นี้ต้องอยู่ที่ .github/workflows/run_aya.yml ใน Repository ของคุณ
-
 name: Aya News Bot (Auto Run)
 
 on:
   schedule:
-    # ตั้งเวลาให้รันทุกๆ 30 นาที (ปรับเปลี่ยนได้ตามต้องการ)
+    # รันทุกๆ 30 นาที
     - cron: '*/30 * * * *'
-  workflow_dispatch: # อนุญาตให้กดปุ่มรันเองได้
+  workflow_dispatch: 
 
 jobs:
   check-news:
     runs-on: ubuntu-latest
     
-    # อนุญาตให้บอทเขียนไฟล์ (เพื่อบันทึกประวัติการอ่านลง repo)
     permissions:
       contents: write
 
@@ -31,12 +28,13 @@ jobs:
 
       - name: Run Aya Bot
         env:
-          # ดึง Key จาก GitHub Secrets
+          # --- ส่วนที่ต้องเพิ่ม Environment Variables ---
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }} # <--- เพิ่มบรรทัดนี้ครับ
+          # --------------------------------------------
         run: python main.py
 
       - name: Commit and Push History
-        # บันทึกไฟล์ aya_news_history.json กลับเข้า Repo
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "📝 Aya updated news history [skip ci]"
