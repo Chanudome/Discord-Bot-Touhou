@@ -1,12 +1,17 @@
 import feedparser
 import time
 import datetime
+import os
 from config import RSS_SOURCES
-from utils import get_timestamp, load_history, save_history
+from utils import get_timestamp, load_history, save_history, send_discord_webhook
 from aya_brain import aya_process_news
 
 def run_once():
     print(f"[{datetime.datetime.now()}] 🌪️ อายะตื่นมาเช็คข่าวรอบใหม่...")
+    
+    # 1. ดึง Webhook URL จาก Environment
+    discord_webhook = os.getenv("DISCORD_WEBHOOK_URL")
+    
     read_history = load_history()
     new_items_found = False
 
@@ -23,25 +28,25 @@ def run_once():
                     pub_date = get_timestamp(entry)
                     print(f"📸 พบข่าวใหม่ ({pub_date}): {entry.title}")
                     
-                    # เตรียมข้อมูล
+                    # เตรียมข้อมูลเนื้อหาข่าว
                     content = ""
                     if 'content' in entry:
                         content = entry.content[0].value
                     elif 'summary' in entry:
                         content = entry.summary
                     
-                    # ส่งให้อายะเขียนข่าว
+                    # ส่งให้อายะ (AI) เขียนข่าว
                     aya_article = aya_process_news(source['type'], entry.title, content, entry.link, pub_date)
                     
                     if "AI_ERROR" in aya_article:
                         print(f"💨 Error: {aya_article}")
-                        # ไม่ continue เพื่อให้เช็คข่าวอื่นต่อ แต่ไม่บันทึก ID นี้
+                        # ถ้า AI Error เราจะไม่บันทึก ID เพื่อให้รอบหน้ามาลองใหม่
                     elif "SKIP" in aya_article:
                         print("🗑️ (ข่าวน่าเบื่อ ข้ามไป)")
                         read_history.append(news_id)
                         new_items_found = True
                     else:
-                        # แสดงผล (ใน GitHub Actions จะโผล่ใน Log)
+                        # แสดงผลใน Log
                         print("\n" + "📰"*20)
                         print(f"📍 {source['name']} | 🕒 {pub_date}")
                         print("-" * 50)
@@ -49,6 +54,13 @@ def run_once():
                         print("-" * 50)
                         print(f"👉 {entry.link}")
                         print("📰"*20 + "\n")
+                        
+                        # --- [จุดที่เพิ่มเข้ามา] ส่งเข้า Discord ---
+                        if discord_webhook:
+                            send_discord_webhook(discord_webhook, aya_article, source['name'])
+                        else:
+                            print("⚠️ ไม่ได้ตั้งค่า DISCORD_WEBHOOK_URL (ข่าวจะแสดงแค่ใน Log)")
+                        # ----------------------------------------
                         
                         read_history.append(news_id)
                         new_items_found = True
