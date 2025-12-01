@@ -1,6 +1,7 @@
 import json
 import os
 import datetime
+import requests
 from time import mktime
 from config import LOG_FILE
 
@@ -32,3 +33,4 @@ def save_history(history_list):
     """บันทึกรายการข่าว (เก็บแค่ 200 รายการล่าสุด)"""
     with open(LOG_FILE, 'w', encoding='utf-8') as f:
         json.dump(history_list[-200:], f, ensure_ascii=False, indent=4)
+        def send_discord_webhook...
