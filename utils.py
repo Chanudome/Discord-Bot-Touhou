@@ -41,7 +41,7 @@ def send_discord_webhook(webhook_url, content, source_name):
         return
 
     # ลิงก์รูปโปรไฟล์ของอายะ (เปลี่ยนรูปได้ตรงนี้)
-    avatar_url = "https://pbs.twimg.com/media/Fxtm9WuaYAA9rMN.jpg" 
+    avatar_url = "    avatar_url = "https://en.touhouwiki.net/images/1/1a/Th105Aya.png" 
 
     data = {
         "username": "Bunbunmaru Newspaper (Shameimaru Aya)",
