@@ -8,7 +8,7 @@ RSS_SOURCES = [
     },
     {
         "name": "Touhou Garakuta (Official Magazine)", 
-        "url": "https://touhougarakuta.com/news", 
+        "url": "https://touhougarakuta.com/news/", 
         "type": "magazine"
     },
     {
