@@ -3,17 +3,17 @@
 RSS_SOURCES = [
     {
         "name": "Touhou Yomoyama (Official News)", 
-        "url": "https://touhou-project.news/news/", 
+        "url": "https://touhou-project.news/feed", 
         "type": "official"
     },
     {
         "name": "Touhou Garakuta (Official Magazine)", 
-        "url": "https://touhougarakuta.com/news/", 
+        "url": "https://touhougarakuta.com/feed", 
         "type": "magazine"
     },
     {
         "name": "Reddit r/touhou (Community)", 
-        "url": "https://www.reddit.com/r/touhou/new/", 
+        "url": "https://www.reddit.com/r/touhou/new/.rss", 
         "type": "community"
     }
 ]
