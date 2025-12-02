@@ -43,10 +43,15 @@ def send_discord_webhook(webhook_url, content, source_name, news_url=None, image
     # รูปโปรไฟล์อายะ (ภาค 10.5)
     avatar_url = "https://en.touhouwiki.net/images/thumb/8/87/Th105Aya.png/200px-Th105Aya.png"
 
+    # เอาลิงก์มาต่อท้ายเนื้อหาข่าวตรงๆ เลย (ให้กดง่ายๆ)
+    final_description = content
+    if news_url:
+        final_description += f"\n\n🔗 **อ่านต่อ:** {news_url}"
+
     # สร้าง Embed Object (กรอบข้อความสวยๆ)
     embed = {
-        "description": content,         # เนื้อหาข่าวจาก AI
-        "color": 12525102,              # สีแดงโทนอายะ
+        "description": final_description, 
+        "color": 12525102,              # สีแดงโทนอายะ (#BF1E2E)
         "footer": {
             "text": f"📰 {source_name} • Bunbunmaru Newspaper"
         },
@@ -56,11 +61,6 @@ def send_discord_webhook(webhook_url, content, source_name, news_url=None, image
         }
     }
 
-    # ถ้ามีลิงก์ข่าวต้นทาง ให้ใส่ใน Title เพื่อให้กดได้
-    if news_url:
-        embed["title"] = "👉 อ่านข่าวต้นฉบับ (คลิกที่นี่)"
-        embed["url"] = news_url
-
     # ถ้ามีรูปภาพข่าว ให้แนบไปด้วย
     if image_url:
         embed["image"] = {"url": image_url}
@@ -69,7 +69,7 @@ def send_discord_webhook(webhook_url, content, source_name, news_url=None, image
     data = {
         "username": "Bunbunmaru Newspaper",
         "avatar_url": avatar_url,
-        "embeds": [embed] # ต้องส่งเป็น List
+        "embeds": [embed]
     }
 
     try:
