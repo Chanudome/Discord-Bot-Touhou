@@ -34,24 +34,47 @@ def save_history(history_list):
     with open(LOG_FILE, 'w', encoding='utf-8') as f:
         json.dump(history_list[-200:], f, ensure_ascii=False, indent=4)
 
-def send_discord_webhook(webhook_url, content, source_name):
-    """ส่งข้อความไปยัง Discord ผ่าน Webhook"""
+def send_discord_webhook(webhook_url, content, source_name, news_url=None, image_url=None):
+    """ส่งข้อความไปยัง Discord ผ่าน Webhook (แบบ Embed)"""
     if not webhook_url:
-        print("⚠️ ไม่พบ Discord Webhook URL (ข้ามการส่ง Discord)")
+        print("⚠️ ไม่พบ Discord Webhook URL")
         return
 
-    # ลิงก์รูปโปรไฟล์ของอายะ (เปลี่ยนรูปได้ตรงนี้)
-    avatar_url = "https://media.discordapp.net/attachments/1445348472466182226/1445348535942905917/Th105Aya.png?ex=69300538&is=692eb3b8&hm=1dd0867f1bc9df7d16e0a714dc07413400daa744589154f4e0e5d8f53252cdc5&=&format=webp&quality=lossless" 
+    # รูปโปรไฟล์อายะ (ภาค 10.5)
+    avatar_url = "https://en.touhouwiki.net/images/thumb/8/87/Th105Aya.png/200px-Th105Aya.png"
 
+    # สร้าง Embed Object (กรอบข้อความสวยๆ)
+    embed = {
+        "description": content,         # เนื้อหาข่าวจาก AI
+        "color": 12525102,              # สีแดงโทนอายะ
+        "footer": {
+            "text": f"📰 {source_name} • Bunbunmaru Newspaper"
+        },
+        "author": {
+            "name": "Shameimaru Aya",
+            "icon_url": avatar_url
+        }
+    }
+
+    # ถ้ามีลิงก์ข่าวต้นทาง ให้ใส่ใน Title เพื่อให้กดได้
+    if news_url:
+        embed["title"] = "👉 อ่านข่าวต้นฉบับ (คลิกที่นี่)"
+        embed["url"] = news_url
+
+    # ถ้ามีรูปภาพข่าว ให้แนบไปด้วย
+    if image_url:
+        embed["image"] = {"url": image_url}
+
+    # ประกอบร่าง JSON ตามมาตรฐาน Discord
     data = {
-        "username": "Bunbunmaru Newspaper (Shameimaru Aya)",
+        "username": "Bunbunmaru Newspaper",
         "avatar_url": avatar_url,
-        "content": content
+        "embeds": [embed] # ต้องส่งเป็น List
     }
 
     try:
         response = requests.post(webhook_url, json=data)
         response.raise_for_status()
-        print(f"✅ ส่งข่าวจาก {source_name} เข้า Discord สำเร็จ")
+        print(f"✅ ส่งข่าว (Embed) จาก {source_name} สำเร็จ")
     except Exception as e:
         print(f"❌ ส่ง Discord ล้มเหลว: {e}")
