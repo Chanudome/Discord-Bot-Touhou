@@ -9,9 +9,14 @@ from aya_brain import aya_process_news
 def run_once():
     print(f"[{datetime.datetime.now()}] 🌪️ อายะตื่นมาเช็คข่าวรอบใหม่...")
     
-    # 1. ดึง Webhook URL จาก Environment
-    discord_webhook = os.getenv("DISCORD_WEBHOOK_URL")
+    # ดึง Webhook URL
+    webhook_env = os.getenv("DISCORD_WEBHOOK_URL")
+    target_webhooks = []
+    if webhook_env:
+        target_webhooks = [url.strip() for url in webhook_env.split(',') if url.strip()]
     
+    print(f"📡 พบเป้าหมายการส่งข่าวทั้งหมด: {len(target_webhooks)} แห่ง")
+
     read_history = load_history()
     new_items_found = False
 
@@ -20,61 +25,56 @@ def run_once():
         try:
             feed = feedparser.parse(source['url'])
             
-            # เช็ค 3 ข่าวล่าสุดของแต่ละเว็บ
-            for entry in feed.entries[:3]:
+            # [แก้ไข] เปลี่ยนจาก [:3] เป็น [:10] เพื่อให้ขุดข่าวเก่าๆ ย้อนหลังได้ลึกขึ้น
+            for entry in feed.entries[:10]:
                 news_id = entry.id if 'id' in entry else entry.link
                 
+                # ถ้าเป็นข่าวที่ยังไม่เคยอ่าน (และประวัติเราว่างอยู่ มันจะถือว่าเป็นข่าวใหม่หมด)
                 if news_id not in read_history:
                     pub_date = get_timestamp(entry)
                     print(f"📸 พบข่าวใหม่ ({pub_date}): {entry.title}")
                     
-                    # เตรียมข้อมูลเนื้อหาข่าว
                     content = ""
                     if 'content' in entry:
                         content = entry.content[0].value
                     elif 'summary' in entry:
                         content = entry.summary
                     
-                    # ส่งให้อายะ (AI) เขียนข่าว
                     aya_article = aya_process_news(source['type'], entry.title, content, entry.link, pub_date)
                     
                     if "AI_ERROR" in aya_article:
                         print(f"💨 Error: {aya_article}")
-                        # ถ้า AI Error เราจะไม่บันทึก ID เพื่อให้รอบหน้ามาลองใหม่
                     elif "SKIP" in aya_article:
                         print("🗑️ (ข่าวน่าเบื่อ ข้ามไป)")
                         read_history.append(news_id)
                         new_items_found = True
                     else:
-                        # แสดงผลใน Log
                         print("\n" + "📰"*20)
                         print(f"📍 {source['name']} | 🕒 {pub_date}")
-                        print("-" * 50)
                         print(aya_article)
-                        print("-" * 50)
-                        print(f"👉 {entry.link}")
                         print("📰"*20 + "\n")
                         
-                        # --- [จุดที่เพิ่มเข้ามา] ส่งเข้า Discord ---
-                        if discord_webhook:
-                            send_discord_webhook(discord_webhook, aya_article, source['name'])
+                        # ส่งเข้าทุก Discord
+                        if target_webhooks:
+                            for i, webhook_url in enumerate(target_webhooks):
+                                print(f"🚀 กำลังส่งไปที่เซิร์ฟเวอร์ลำดับที่ {i+1}...")
+                                send_discord_webhook(webhook_url, aya_article, source['name'])
                         else:
-                            print("⚠️ ไม่ได้ตั้งค่า DISCORD_WEBHOOK_URL (ข่าวจะแสดงแค่ใน Log)")
-                        # ----------------------------------------
+                            print("⚠️ ไม่ได้ตั้งค่า DISCORD_WEBHOOK_URL")
                         
                         read_history.append(news_id)
                         new_items_found = True
                     
-                    time.sleep(2) # พักนิดหน่อยกันโดนแบน
+                    time.sleep(2) 
+
         except Exception as e:
             print(f"⚠️ Error accessing {source['name']}: {e}")
 
-    # บันทึกประวัติเฉพาะเมื่อมีข่าวใหม่หรือมีการข้ามข่าว
     if new_items_found:
         save_history(read_history)
-        print("💾 บันทึกประวัติการอ่านเรียบร้อย")
+        print("💾 บันทึกประวัติเรียบร้อย")
     else:
-        print("💤 ไม่พบข่าวใหม่ในรอบนี้ กลับไปนอนต่อ...")
+        print("💤 ไม่พบข่าวใหม่")
 
 if __name__ == "__main__":
     run_once()
