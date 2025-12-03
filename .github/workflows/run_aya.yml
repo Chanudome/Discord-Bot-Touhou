@@ -2,8 +2,7 @@ name: Aya News Bot (Auto Run)
 
 on:
   schedule:
-    # รันทุกๆ 30 นาที
-    - cron: '*/30 * * * *'
+    - cron: '0 */2 * * *'
   workflow_dispatch: 
 
 jobs:
@@ -20,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10' # <--- แก้จาก 3.9 เป็น 3.10 ครับ
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
