@@ -34,7 +34,8 @@ def save_history(history_list):
     with open(LOG_FILE, 'w', encoding='utf-8') as f:
         json.dump(history_list[-200:], f, ensure_ascii=False, indent=4)
 
-def send_discord_webhook(webhook_url, content, source_name, news_url=None, image_url=None):
+# [แก้ไข] เพิ่มตัวรับค่า pub_date=None เข้ามา
+def send_discord_webhook(webhook_url, content, source_name, news_url=None, image_url=None, pub_date=None):
     """ส่งข้อความไปยัง Discord ผ่าน Webhook (แบบ Embed)"""
     if not webhook_url:
         print("⚠️ ไม่พบ Discord Webhook URL")
@@ -48,12 +49,17 @@ def send_discord_webhook(webhook_url, content, source_name, news_url=None, image
     if news_url:
         final_description += f"\n\n🔗 **อ่านต่อ:** {news_url}"
 
+    # [แก้ไข] สร้างข้อความส่วนท้าย (Footer) ให้มีวันที่ด้วย
+    footer_text = f"📰 {source_name} • Bunbunmaru Newspaper"
+    if pub_date:
+        footer_text += f" • 🕒 {pub_date}"
+
     # สร้าง Embed Object (กรอบข้อความสวยๆ)
     embed = {
         "description": final_description, 
         "color": 12525102,              # สีแดงโทนอายะ (#BF1E2E)
         "footer": {
-            "text": f"📰 {source_name} • Bunbunmaru Newspaper"
+            "text": footer_text
         },
         "author": {
             "name": "Shameimaru Aya",
