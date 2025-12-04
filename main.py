@@ -45,6 +45,7 @@ def extract_image(entry):
 def run_once():
     print(f"[{datetime.datetime.now()}] 🌪️ อายะตื่นมาเช็คข่าวรอบใหม่...")
     
+    # 1. ดึง Webhook URL ทั้งหมดมา (รองรับหลายลิงก์คั่นด้วยลูกน้ำ)
     webhook_env = os.getenv("DISCORD_WEBHOOK_URL")
     target_webhooks = []
     if webhook_env:
@@ -60,7 +61,7 @@ def run_once():
         try:
             feed = feedparser.parse(source['url'])
             
-            # เช็ค 10 ข่าวล่าสุด
+            # เช็คย้อนหลัง 10 ข่าว
             for entry in feed.entries[:10]:
                 news_id = entry.id if 'id' in entry else entry.link
                 
@@ -74,7 +75,7 @@ def run_once():
                     elif 'summary' in entry:
                         content = entry.summary
                     
-                    # 1. ดึงรูปภาพออกมา (ฟีเจอร์ใหม่)
+                    # 1. ดึงรูปภาพออกมา
                     image_url = extract_image(entry)
                     if image_url:
                         print(f"🖼️ เจอรูปภาพประกอบ: {image_url}")
@@ -84,10 +85,13 @@ def run_once():
                     
                     if "AI_ERROR" in aya_article:
                         print(f"💨 Error: {aya_article}")
+                        # ถ้า Error ให้ break ออกจากลูปข่าวนี้ แล้วไปรอรอบหน้าเลย (เพื่อความปลอดภัย)
+                        break 
                     elif "SKIP" in aya_article:
                         print("🗑️ (ข่าวน่าเบื่อ ข้ามไป)")
                         read_history.append(news_id)
                         new_items_found = True
+                        time.sleep(5) # พักนิดหน่อยสำหรับข่าวที่ข้าม
                     else:
                         print("\n" + "📰"*20)
                         print(f"📍 {source['name']} | 🕒 {pub_date}")
@@ -95,25 +99,28 @@ def run_once():
                         if image_url: print(f"🖼️ Image: {image_url}")
                         print("-" * 50)
                         
-                        # 3. ส่งเข้า Discord แบบ Embed (มีรูป)
+                        # 3. ส่งเข้า Discord แบบ Embed (มีรูป + วันที่)
                         if target_webhooks:
                             for i, webhook_url in enumerate(target_webhooks):
                                 print(f"🚀 กำลังส่ง (Embed) ไปที่เซิร์ฟเวอร์ลำดับที่ {i+1}...")
-                                # ส่งทั้ง เนื้อหา, ลิงก์ต้นทาง, และลิงก์รูปภาพ
+                                # ส่งข้อมูลครบชุด: เนื้อหา, ชื่อแหล่ง, ลิงก์ข่าว, รูปภาพ, และวันที่
                                 send_discord_webhook(
                                     webhook_url, 
                                     aya_article, 
                                     source['name'], 
                                     news_url=entry.link, 
-                                    image_url=image_url
+                                    image_url=image_url,
+                                    pub_date=pub_date
                                 )
                         else:
                             print("⚠️ ไม่ได้ตั้งค่า DISCORD_WEBHOOK_URL")
                         
                         read_history.append(news_id)
                         new_items_found = True
-                    
-                    time.sleep(20) 
+                        
+                        # [จุดสำคัญ] พัก 20 วินาที เพื่อป้องกัน API Rate Limit
+                        print("⏳ พัก 20 วินาที... (กันโดนแบน)")
+                        time.sleep(20) 
 
         except Exception as e:
             print(f"⚠️ Error accessing {source['name']}: {e}")
