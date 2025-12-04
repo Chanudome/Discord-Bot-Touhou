@@ -113,7 +113,7 @@ def run_once():
                         read_history.append(news_id)
                         new_items_found = True
                     
-                    time.sleep(2) 
+                    time.sleep(20) 
 
         except Exception as e:
             print(f"⚠️ Error accessing {source['name']}: {e}")
