@@ -34,14 +34,13 @@ def save_history(history_list):
     with open(LOG_FILE, 'w', encoding='utf-8') as f:
         json.dump(history_list[-200:], f, ensure_ascii=False, indent=4)
 
-# [แก้ไข] เพิ่มตัวรับค่า pub_date=None เข้ามา
 def send_discord_webhook(webhook_url, content, source_name, news_url=None, image_url=None, pub_date=None):
     """ส่งข้อความไปยัง Discord ผ่าน Webhook (แบบ Embed)"""
     if not webhook_url:
         print("⚠️ ไม่พบ Discord Webhook URL")
         return
 
-    # รูปโปรไฟล์อายะ (ภาค 10.5)
+    # รูปโปรไฟล์อายะ (Touhou 10.5)
     avatar_url = "https://en.touhouwiki.net/images/thumb/8/87/Th105Aya.png/200px-Th105Aya.png"
 
     # เอาลิงก์มาต่อท้ายเนื้อหาข่าวตรงๆ เลย (ให้กดง่ายๆ)
@@ -49,7 +48,7 @@ def send_discord_webhook(webhook_url, content, source_name, news_url=None, image
     if news_url:
         final_description += f"\n\n🔗 **อ่านต่อ:** {news_url}"
 
-    # [แก้ไข] สร้างข้อความส่วนท้าย (Footer) ให้มีวันที่ด้วย
+    # สร้าง Footer (ใส่ชื่อแหล่งข่าว + วันที่)
     footer_text = f"📰 {source_name} • Bunbunmaru Newspaper"
     if pub_date:
         footer_text += f" • 🕒 {pub_date}"
@@ -71,7 +70,7 @@ def send_discord_webhook(webhook_url, content, source_name, news_url=None, image
     if image_url:
         embed["image"] = {"url": image_url}
 
-    # ประกอบร่าง JSON ตามมาตรฐาน Discord
+    # ประกอบร่าง JSON
     data = {
         "username": "Bunbunmaru Newspaper",
         "avatar_url": avatar_url,
