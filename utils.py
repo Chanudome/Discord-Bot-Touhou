@@ -41,7 +41,7 @@ def send_discord_webhook(webhook_url, content, source_name, news_url=None, image
         return
 
     # รูปโปรไฟล์อายะ (Touhou 10.5)
-    avatar_url = "https://github.com/Chanudome/Discord-Bot-Touhou/blob/main/Th105Aya.png"
+    avatar_url = "https://raw.githubusercontent.com/Chanudome/Discord-Bot-Touhou/main/Th105Aya.png"
 
     # เอาลิงก์มาต่อท้ายเนื้อหาข่าวตรงๆ เลย (ให้กดง่ายๆ)
     final_description = content
