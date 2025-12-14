@@ -20,6 +20,11 @@ RSS_SOURCES = [
         "name": "Reddit Touhou (News/Goods/Games)", 
         "url": "https://www.reddit.com/r/touhou/search.rss?q=flair_name%3A%22News%22+OR+flair_name%3A%22Merchandise%22+OR+flair_name%3A%22Game%22&restrict_sr=1&sort=new", 
         "type": "community"
+    },
+    {
+        "name":"Touhou Station (Official Broadcast)",
+        "url":"https://touhougarakuta.com/tag/touhou_station/feed",
+        "type":"Official Broadcast"
     }
 ]
 
