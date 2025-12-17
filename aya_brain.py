@@ -1,69 +1,25 @@
-import google-genai as genai
+from google import genai
+from google.genai import types
 import os
 import time
 
 # ดึง Key จาก Environment Variable
 api_key = os.getenv("GEMINI_API_KEY")
 
-# ตัวแปรสำหรับเก็บโมเดล
-model = None
-
+# สร้าง Client สำหรับเชื่อมต่อ (แบบใหม่)
+client = None
 if api_key:
-    genai.configure(api_key=api_key)
-    
     try:
-        print("🔍 กำลังสแกนหาโมเดลทั้งหมดที่มีใน Key นี้...")
-        all_models = list(genai.list_models())
-        
-        # คัดเฉพาะรุ่นที่สร้างข้อความได้ (generateContent)
-        valid_models = []
-        print("📋 รายชื่อโมเดลที่พบ (Supported):")
-        for m in all_models:
-            if 'generateContent' in m.supported_generation_methods:
-                print(f"   - {m.name}")
-                valid_models.append(m.name)
-
-        # จัดลำดับความสำคัญ: เลือกตระกูล Flash ก่อนเสมอ (โควต้าเยอะ) -> ถ้าไม่มีค่อยไป Pro
-        preferred_order = [
-            'gemini-2.5-flash',          
-            'gemini-2.5-pro',            
-            'gemini-3.0-pro-preview',
-        ]
-        
-        selected_model_name = None
-        
-        # 1. ลองหาตามรายการที่เราชอบก่อน
-        for pref in preferred_order:
-            for m_name in valid_models:
-                # เช็คแบบยืดหยุ่น (เผื่อชื่อมี models/ นำหน้า)
-                if pref in m_name: 
-                    selected_model_name = m_name
-                    break
-            if selected_model_name:
-                break
-        
-        # 2. ถ้าหาไม่เจอเลยสักตัวในรายการข้างบน ให้หยิบ "ตัวแรกสุด" ที่มีมาใช้เลย
-        if not selected_model_name and valid_models:
-            selected_model_name = valid_models[0]
-            print(f"⚠️ ไม่พบโมเดลมาตรฐานที่รู้จัก เลยหยิบตัวนี้มาแทน: {selected_model_name}")
-            
-        if selected_model_name:
-            print(f"🤖 ✅ ตกลงเลือกใช้โมเดล: {selected_model_name}")
-            model = genai.GenerativeModel(selected_model_name)
-        else:
-            print("❌ Error: ไม่พบโมเดล AI ที่สร้างข้อความได้เลยสักตัว (กรุณาเช็ค API Key)")
-            
+        client = genai.Client(api_key=api_key)
     except Exception as e:
-        print(f"⚠️ Error ในการตั้งค่า AI: {e}")
-else:
-    print("⚠️ Warning: ไม่พบ GEMINI_API_KEY ใน Environment Variables")
+        print(f"⚠️ Error ในการตั้งค่า AI Client: {e}")
 
 def aya_process_news(source_type, title, content, link, pub_date):
     """
-    ฟังก์ชันหลักพร้อมระบบ Retry แก้ปัญหา 429
+    ฟังก์ชันหลักพร้อมระบบ Retry แก้ปัญหา 429 (รองรับ google-genai ตัวใหม่)
     """
-    if not model:
-        return "AI_ERROR: Model not initialized (Check Logs)"
+    if not client:
+        return "AI_ERROR: Client not initialized (Check API Key)"
 
     system_instruction = """
     Roleplay: คุณคือ "Shameimaru Aya" (ชามะเมารุ อายะ) นักข่าวเท็นงูแห่งหนังสือพิมพ์บุนบุนมารุ
@@ -72,7 +28,6 @@ def aya_process_news(source_type, title, content, link, pub_date):
     1. อ่านข่าวและแปลเป็นภาษาไทยที่เข้าใจง่าย
     2. แยกแยะ "ข้อเท็จจริง" (Report) ออกจาก "เนื้อเรื่อง/ตำนาน" (Lore)
     3. ใช้น้ำเสียงร่าเริง กระตือรือร้น (ขึ้นต้นด้วย "อายะยะ!", "ข่าวด่วน!")
-    4. เรียก ZUN ว่า "ท่านคันนุชิ"
     """
 
     specific_task = ""
@@ -113,19 +68,31 @@ def aya_process_news(source_type, title, content, link, pub_date):
     🌪️ **ความเห็นของอายะ:** <วิเคราะห์ข่าว หรือแซวตัวละคร>
     """
 
-    # --- ระบบ Retry (ลองใหม่ 3 ครั้ง ถ้าติด 429) ---
-    max_retries = 3
-    for attempt in range(max_retries):
+    # รายชื่อโมเดลที่จะลองใช้ (เรียงจาก Flash ที่โควต้าเยอะสุด ไปหา Pro)
+    models_to_try = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-2.0-flash-exp"
+    ]
+
+    # ระบบ Retry (ลองเปลี่ยนโมเดลถ้า Error)
+    for model_name in models_to_try:
         try:
-            response = model.generate_content(full_prompt)
+            # เรียกใช้งาน AI แบบใหม่
+            response = client.models.generate_content(
+                model=model_name,
+                contents=full_prompt
+            )
             return response.text.strip()
+            
         except Exception as e:
             error_msg = str(e)
             if "429" in error_msg:
-                wait_time = 30 * (attempt + 1) 
-                print(f"⚠️ ติด Error 429 (Quota/Rate Limit)! กำลังพัก {wait_time} วินาที... (รอบที่ {attempt+1})")
-                time.sleep(wait_time)
+                print(f"⚠️ ติด Error 429 (Quota) ที่โมเดล {model_name}.. กำลังพักและลองตัวถัดไป")
+                time.sleep(10)
             else:
-                return f"AI_ERROR: {error_msg}"
+                print(f"⚠️ Error ({model_name}): {error_msg}")
+                # ลองโมเดลถัดไปทันที
     
-    return "AI_ERROR: 429 Quota Exceeded (ยอมแพ้แล้ว)"
+    return "AI_ERROR: ไม่สามารถแปลข่าวได้ (ลองทุกโมเดลแล้ว)"
