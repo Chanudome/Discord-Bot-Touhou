@@ -70,14 +70,16 @@ def aya_process_news(source_type, title, content, link, pub_date):
 
     # รายชื่อโมเดล "รวมมิตร" (ใส่ทุกรหัสที่เป็นไปได้ เพื่อกันเหนียว 404)
     models_to_try = [
-        "gemini-2.0-flash-exp",      # ตัวใหม่ เร็ว (แนะนำ)
-        "gemini-2.0-flash",          # ชื่อสำรอง
-        "gemini-3.0-flash-preview",  # [เพิ่ม] ตามที่คุณขอ
-        "gemini-3.0-pro-preview",    # [เพิ่ม] ตามที่คุณขอ
-        "gemini-1.5-flash",          # ตัวมาตรฐาน
-        "gemini-1.5-flash-001",      # ชื่อสำรอง 1
-        "gemini-1.5-flash-8b",       # ตัวเล็ก ประหยัดโควต้า
-        "gemini-1.5-pro",            # ตัว Pro
+        "gemini-2.5-flash",          # [เพิ่ม] ตัวหลักที่คุณมี
+        "gemini-2.5-pro",            # [เพิ่ม] ตัวรองที่คุณมี
+        "gemini-2.0-flash-exp",      
+        "gemini-2.0-flash",          
+        "gemini-3.0-flash-preview",  
+        "gemini-3.0-pro-preview",    
+        "gemini-1.5-flash",          
+        "gemini-1.5-flash-001",      
+        "gemini-1.5-flash-8b",       
+        "gemini-1.5-pro",            
     ]
 
     # ระบบ Retry (ลองวนใช้ทุกโมเดลที่มีในรายการ)
@@ -95,8 +97,8 @@ def aya_process_news(source_type, title, content, link, pub_date):
             
             # ถ้าติด Quota (429) ให้พักและลองตัวถัดไป
             if "429" in error_msg:
-                print(f"⚠️ โมเดล {model_name} โควต้าเต็ม (429).. พัก 5 วิ แล้วเปลี่ยนตัว")
-                time.sleep(5)
+                print(f"⚠️ โมเดล {model_name} โควต้าเต็ม (429).. พัก 30 วิ แล้วเปลี่ยนตัว")
+                time.sleep(30) # เพิ่มเวลาพักเป็น 30 วินาที
             
             # ถ้า Error อื่นๆ (404, หรือชื่อผิด) ก็ข้ามเงียบๆ
             else:
