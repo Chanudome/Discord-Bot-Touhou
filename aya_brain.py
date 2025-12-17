@@ -70,12 +70,14 @@ def aya_process_news(source_type, title, content, link, pub_date):
 
     # [แก้ไข] รายชื่อโมเดลตามที่คุณแจ้ง (ตัด 1.0/1.5 ทิ้งทั้งหมด)
     models_to_try = [
-        "gemini-2.0-flash-exp",      # ตัวหลักที่น่าจะเวิร์คสุด
-        "gemini-2.0-flash",          # ชื่อสำรอง
-        "gemini-3.0-flash-preview",  # 3.0 Flash ตามที่คุณขอ
-        "gemini-3.0-pro-preview"     # 3.0 Pro ตามที่คุณขอ
+        "gemini-2.0-flash",          # ตัวหลัก (เร็ว/ใหม่)
+        "gemini-2.0-flash-exp",      # ตัวรอง
+        "gemini-1.5-flash",          # ตัวมาตรฐาน (โควต้าเยอะสุด 1500/วัน)
+        "gemini-1.5-flash-8b",       # ตัวเล็ก (เร็วมาก/โควต้าแยก)
+        "gemini-2.5-flash-preview",  # "Banana" (ถ้าบัญชีรองรับ)
+        "gemini-2.5-pro-preview",    # Banana Pro
+        "gemini-1.5-pro",            # ตัวฉลาด (โควต้าน้อย เก็บไว้ท้ายๆ)
     ]
-
     # ระบบ Retry (ลองวนใช้ทุกโมเดลที่มี)
     for model_name in models_to_try:
         try:
@@ -88,14 +90,16 @@ def aya_process_news(source_type, title, content, link, pub_date):
         except Exception as e:
             error_msg = str(e)
             
-            # ถ้าติด Quota (429) ให้พักนานหน่อย แล้วลองตัวอื่น
+            # ถ้าติด Quota (429) ให้แจ้งเตือนแล้วข้ามไปตัวถัดไป
             if "429" in error_msg:
-                wait_time = 40 
-                print(f"⚠️ ติด Error 429 (Quota) ที่โมเดล {model_name}.. พัก {wait_time} วิ แล้วลองตัวถัดไป")
-                time.sleep(wait_time)
+                print(f"⚠️ โมเดล {model_name} โควต้าเต็ม (429).. กำลังลองตัวถัดไป..")
+                time.sleep(2) # พักแป๊บหนึ่งแล้วไปต่อเลย
             
-            # ถ้าเป็น 404 (หาไม่เจอ) หรือ Error อื่นๆ ให้ข้ามเลย
+            # ถ้าเป็น 404 (หาไม่เจอ) ก็ข้าม
+            elif "404" in error_msg:
+                print(f"⚠️ โมเดล {model_name} ใช้ไม่ได้ (404) -> ข้าม")
+            
             else:
-                print(f"⚠️ Error ({model_name}): {error_msg} -> ข้ามไปลองตัวอื่น")
+                print(f"⚠️ Error ({model_name}): {error_msg} -> ข้าม")
     
-    return "AI_ERROR: ไม่สามารถแปลข่าวได้ (ลองทุกโมเดลแล้ว)"
+    return "AI_ERROR: ไม่สามารถแปลข่าวได้ (ลองทุกโมเดลแล้วโควต้าเต็มหมด)"
