@@ -82,8 +82,14 @@ def aya_process_news(source_type, title, content, link, pub_date):
         "gemini-1.5-pro",            
     ]
 
+   # 2. เพิ่มโมเดลที่สแกนเจอเอง (ถ้าไม่มีในรายการหลัก ให้เติมต่อท้าย)
+    fallback_list = get_fallback_models()
+    for m in fallback_list:
+        if m not in models_to_try:
+            models_to_try.append(m)
+
     # ระบบ Retry (ลองวนใช้ทุกโมเดลที่มีในรายการ)
-    for model_name in models_to_try:
+    for i, model_name in enumerate(models_to_try):
         try:
             # เรียกใช้งาน AI
             response = client.models.generate_content(
@@ -95,12 +101,15 @@ def aya_process_news(source_type, title, content, link, pub_date):
         except Exception as e:
             error_msg = str(e)
             
-            # ถ้าติด Quota (429) ให้พักและลองตัวถัดไป
+            # ถ้าติด Quota (429) ให้พักแบบทวีคูณ (30 -> 60 -> 90 วิ)
             if "429" in error_msg:
-                print(f"⚠️ โมเดล {model_name} โควต้าเต็ม (429).. พัก 30 วิ แล้วเปลี่ยนตัว")
-                time.sleep(30) # เพิ่มเวลาพักเป็น 30 วินาที
+                wait_time = 30 * (i + 1)
+                if wait_time > 120: wait_time = 120 # ตันที่ 2 นาที
+                
+                print(f"⚠️ โมเดล {model_name} โควต้าเต็ม (429).. พัก {wait_time} วิ แล้วลองตัวถัดไป")
+                time.sleep(wait_time)
             
-            # ถ้า Error อื่นๆ (404, หรือชื่อผิด) ก็ข้ามเงียบๆ
+            # ถ้า Error 404 หรืออื่นๆ ก็ข้ามเงียบๆ
             else:
                 print(f"⚠️ โมเดล {model_name} ใช้ไม่ได้ ({error_msg}) -> ข้าม")
     
