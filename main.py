@@ -61,9 +61,15 @@ def run_once():
         try:
             feed = feedparser.parse(source['url'])
             
+            # [Debug] แจ้งจำนวนข่าวที่เจอใน Feed นี้
+            print(f"   🔎 เจอทั้งหมด {len(feed.entries)} ข่าวใน Feed นี้")
+            
             # เช็คย้อนหลัง 10 ข่าว
             for entry in feed.entries[:10]:
                 news_id = entry.id if 'id' in entry else entry.link
+                
+                # [Debug] แสดงชื่อข่าวที่กำลังเช็ค (จะได้รู้ว่าบอทเห็นข่าวไหม)
+                # print(f"   - [Check] {entry.title}") 
                 
                 if news_id not in read_history:
                     pub_date = get_timestamp(entry)
