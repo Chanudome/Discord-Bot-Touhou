@@ -5,13 +5,13 @@ RSS_SOURCES = [
     # 1. ข่าวทางการ (Official News) - พลาดไม่ได้
     {
         "name": "Touhou Yomoyama (Official)", 
-        "url": "https://touhou-project.news/feed", 
+        "url": "https://touhou-project.news/feed/", 
         "type": "official"
     },
     # 2. นิตยสารทางการ (Official Magazine) - บทความและมังงะ
     {
         "name": "Touhou Garakuta (Magazine)", 
-        "url": "https://touhougarakuta.com/feed", 
+        "url": "https://touhougarakuta.com/feed/", 
         "type": "magazine"
     },
     # 3. ชุมชน Reddit (กรองเฉพาะ: ข่าว, สินค้า, เกม)
@@ -23,7 +23,7 @@ RSS_SOURCES = [
     },
     {
         "name":"Touhou Station (Official Broadcast)",
-        "url":"https://touhougarakuta.com/tag/touhou_station/feed",
+        "url":"https://touhougarakuta.com/tag/touhou_station/feed/",
         "type":"Official Broadcast"
     }
 ]
