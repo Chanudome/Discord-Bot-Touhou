@@ -3,40 +3,37 @@ import time
 import datetime
 import os
 import re 
-import requests # [เพิ่ม] ต้องใช้ requests เพื่อดึงข้อมูลเว็บที่บล็อกบอท
+import requests 
 from config import RSS_SOURCES
 from utils import get_timestamp, load_history, save_history, send_discord_webhook
 from aya_brain import aya_process_news
 
-# กำหนด User-Agent ให้ดูเหมือนคนใช้ Browser จริงๆ
+# ปรับ User-Agent ให้เหมือนคนใช้งานจริงที่สุด (แก้ปัญหาเว็บ Official บล็อกบอท)
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+    "Accept": "application/rss+xml, application/xml, application/atom+xml, text/xml, text/html, */*"
 }
 
 def fetch_rss_feed(url):
-    """
-    ฟังก์ชันดึง RSS โดยใช้ requests เพื่อแก้ปัญหาเว็บที่บล็อก feedparser
-    """
+    """ฟังก์ชันดึง RSS แบบทะลุบล็อก 404/403"""
     try:
-        # 1. ลองดึงด้วย requests ก่อน (เนียนกว่า)
-        response = requests.get(url, headers=HEADERS, timeout=15)
-        response.raise_for_status()
-        # ส่งเนื้อหา (content) ไปให้ feedparser แปลง
-        feed = feedparser.parse(response.content)
+        # ลองดึงด้วย requests ก่อน (เนียนกว่า)
+        response = requests.get(url, headers=HEADERS, timeout=20)
         
-        # เช็คว่าอ่านรู้เรื่องไหม
-        if feed.bozo == 0 or len(feed.entries) > 0:
-            return feed
+        # ถ้าเจอ 404 ให้ลองส่งกลับไปให้ feedparser จัดการต่อ (เผื่อ redirect)
+        if response.status_code == 404:
+            print(f"   ⚠️ เจอ 404 ที่ {url} - กำลังลองวิธีสำรอง...")
+            return feedparser.parse(url)
             
+        response.raise_for_status()
+        feed = feedparser.parse(response.content)
+        return feed
     except Exception as e:
         print(f"   ⚠️ Requests failed ({e}), trying fallback...")
-
-    # 2. ถ้าวิธีแรกไม่ได้ผล ลองใช้ feedparser ดึงตรงๆ (Fallback)
-    return feedparser.parse(url)
+        return feedparser.parse(url)
 
 def extract_image(entry):
-    """พยายามดึง URL รูปภาพจากข่าว"""
+    """พยายามแกะ URL รูปภาพจากข่าว"""
     if 'media_content' in entry:
         try: return entry.media_content[0]['url']
         except: pass
@@ -58,18 +55,14 @@ def extract_image(entry):
     return None
 
 def is_interesting_reddit_post(entry):
-    """กรองกระทู้ Reddit"""
+    """กรองกระทู้ Reddit เอาเฉพาะที่น่าสนใจ"""
     wanted_flairs = ["News", "Game News", "Merchandise", "Cosplay", "Official News", "Game Discussion"]
-    
     if 'tags' in entry:
         for tag in entry.tags:
-            if tag.term in wanted_flairs:
-                return True
-                
+            if tag.term in wanted_flairs: return True
     title_lower = entry.title.lower()
-    if "[news]" in title_lower or "[game]" in title_lower or "release" in title_lower:
-        return True
-        
+    keywords = ["[news]", "[game]", "release", "announcement", "trailer", "pv"]
+    if any(k in title_lower for k in keywords): return True
     return False
 
 def run_once():
@@ -83,31 +76,32 @@ def run_once():
     print(f"📡 พบเป้าหมายการส่งข่าวทั้งหมด: {len(target_webhooks)} แห่ง")
 
     read_history = load_history()
-    new_items_found = False
-
     processed_count = 0 
-    MAX_NEWS_PER_RUN = 10 
+    MAX_NEWS_PER_RUN = 5 # จำกัดจำนวนข่าวต่อรอบเพื่อเซฟโควต้า
 
     for source in RSS_SOURCES:
+        if processed_count >= MAX_NEWS_PER_RUN:
+            print("🛑 ครบโควต้า 5 ข่าวแล้ว พักก่อน...")
+            break
+
         print(f"Flying to... {source['name']} 🦅")
         try:
-            # [แก้ไข] เรียกใช้ฟังก์ชันใหม่ fetch_rss_feed แทน feedparser.parse โดยตรง
             feed = fetch_rss_feed(source['url'])
             
-            print(f"   🔎 เจอทั้งหมด {len(feed.entries)} ข่าวใน Feed นี้")
+            # เช็คว่าเจอข่าวไหม
+            count = len(feed.entries)
+            print(f"   🔎 เจอทั้งหมด {count} ข่าวใน Feed นี้")
             
-            if len(feed.entries) == 0:
-                print("   ⚠️ ไม่พบข้อมูลเลย (เว็บอาจจะบล็อก หรือลิงก์ผิด)")
+            if count == 0:
+                print("   ⚠️ ไม่พบข้อมูลเลย (ข้าม)")
                 continue
 
-            # เช็คย้อนหลัง 100 ข่าว (เผื่อข่าวเก่า)
-            check_limit = 100 
+            # เช็คย้อนหลัง 50 ข่าว (เผื่อกรณีลบประวัติแล้วอยากได้ข่าวเก่าคืน)
+            check_limit = 50
             
             for entry in feed.entries[:check_limit]:
                 
-                if processed_count >= MAX_NEWS_PER_RUN:
-                    print("🛑 ส่งข่าวครบโควต้าต่อรอบแล้ว พักก่อน...")
-                    break
+                if processed_count >= MAX_NEWS_PER_RUN: break
 
                 news_id = entry.id if 'id' in entry else entry.link
                 
@@ -121,13 +115,12 @@ def run_once():
                     pub_date = get_timestamp(entry)
                     
                     content = ""
-                    if 'content' in entry:
-                        content = entry.content[0].value
-                    elif 'summary' in entry:
-                        content = entry.summary
+                    if 'content' in entry: content = entry.content[0].value
+                    elif 'summary' in entry: content = entry.summary
                     
                     image_url = extract_image(entry)
                     
+                    # ส่งให้ AI แปล
                     aya_article = aya_process_news(source['type'], entry.title, content, entry.link, pub_date)
                     
                     if "AI_ERROR" in aya_article:
@@ -136,11 +129,14 @@ def run_once():
                             print("⛔ โควต้าเต็ม (429) หยุดทันที")
                             processed_count = MAX_NEWS_PER_RUN
                             break
+                    
                     elif "SKIP" in aya_article:
                         print("     🗑️ (ข่าวน่าเบื่อ ข้ามไป)")
+                        # บันทึก ID แม้จะข้าม เพื่อไม่ให้วนซ้ำ
                         read_history.append(news_id)
-                        new_items_found = True
+                        save_history(read_history) # บันทึกทันที
                         time.sleep(2) 
+                    
                     else:
                         print("\n" + "📰"*20)
                         print(f"📍 {source['name']} | 🕒 {pub_date}")
@@ -150,7 +146,7 @@ def run_once():
                         
                         if target_webhooks:
                             for i, webhook_url in enumerate(target_webhooks):
-                                print(f"🚀 กำลังส่ง (Embed) ไปที่เซิร์ฟเวอร์ลำดับที่ {i+1}...")
+                                print(f"🚀 กำลังส่งไปที่เซิร์ฟเวอร์ลำดับที่ {i+1}...")
                                 send_discord_webhook(
                                     webhook_url, 
                                     aya_article, 
@@ -162,8 +158,10 @@ def run_once():
                         else:
                             print("⚠️ ไม่ได้ตั้งค่า DISCORD_WEBHOOK_URL")
                         
+                        # บันทึกทันทีหลังส่ง
                         read_history.append(news_id)
-                        new_items_found = True
+                        save_history(read_history)
+                        
                         processed_count += 1
                         
                         print("⏳ พัก 20 วินาที...")
@@ -172,11 +170,12 @@ def run_once():
         except Exception as e:
             print(f"⚠️ Error accessing {source['name']}: {e}")
 
-    if new_items_found:
-        save_history(read_history)
-        print("💾 บันทึกประวัติเรียบร้อย")
-    else:
-        print("💤 ไม่พบข่าวใหม่")
+    # Save ปิดท้ายอีกรอบ
+    save_history(read_history)
+    print("💤 จบการทำงานรอบนี้")
 
 if __name__ == "__main__":
     run_once()
+
+
+
