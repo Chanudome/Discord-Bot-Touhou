@@ -3,12 +3,37 @@ import time
 import datetime
 import os
 import re 
+import requests # [เพิ่ม] ต้องใช้ requests เพื่อดึงข้อมูลเว็บที่บล็อกบอท
 from config import RSS_SOURCES
 from utils import get_timestamp, load_history, save_history, send_discord_webhook
 from aya_brain import aya_process_news
 
-# [แก้ไข] กำหนด User-Agent เพื่อให้เว็บปลายทางนึกว่าเป็นคนเปิดดูผ่าน Browser (แก้ปัญหา Found 0 news)
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+# กำหนด User-Agent ให้ดูเหมือนคนใช้ Browser จริงๆ
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+}
+
+def fetch_rss_feed(url):
+    """
+    ฟังก์ชันดึง RSS โดยใช้ requests เพื่อแก้ปัญหาเว็บที่บล็อก feedparser
+    """
+    try:
+        # 1. ลองดึงด้วย requests ก่อน (เนียนกว่า)
+        response = requests.get(url, headers=HEADERS, timeout=15)
+        response.raise_for_status()
+        # ส่งเนื้อหา (content) ไปให้ feedparser แปลง
+        feed = feedparser.parse(response.content)
+        
+        # เช็คว่าอ่านรู้เรื่องไหม
+        if feed.bozo == 0 or len(feed.entries) > 0:
+            return feed
+            
+    except Exception as e:
+        print(f"   ⚠️ Requests failed ({e}), trying fallback...")
+
+    # 2. ถ้าวิธีแรกไม่ได้ผล ลองใช้ feedparser ดึงตรงๆ (Fallback)
+    return feedparser.parse(url)
 
 def extract_image(entry):
     """พยายามดึง URL รูปภาพจากข่าว"""
@@ -33,9 +58,7 @@ def extract_image(entry):
     return None
 
 def is_interesting_reddit_post(entry):
-    """
-    เช็คว่ากระทู้ Reddit นี้น่าสนใจไหม (กรองเฉพาะ Flair ที่ต้องการ)
-    """
+    """กรองกระทู้ Reddit"""
     wanted_flairs = ["News", "Game News", "Merchandise", "Cosplay", "Official News", "Game Discussion"]
     
     if 'tags' in entry:
@@ -68,8 +91,8 @@ def run_once():
     for source in RSS_SOURCES:
         print(f"Flying to... {source['name']} 🦅")
         try:
-            # [แก้ไข] ใส่ agent=USER_AGENT เพื่อแก้ปัญหาเว็บ Yomoyama/Garakuta บล็อกบอท
-            feed = feedparser.parse(source['url'], agent=USER_AGENT)
+            # [แก้ไข] เรียกใช้ฟังก์ชันใหม่ fetch_rss_feed แทน feedparser.parse โดยตรง
+            feed = fetch_rss_feed(source['url'])
             
             print(f"   🔎 เจอทั้งหมด {len(feed.entries)} ข่าวใน Feed นี้")
             
@@ -77,7 +100,7 @@ def run_once():
                 print("   ⚠️ ไม่พบข้อมูลเลย (เว็บอาจจะบล็อก หรือลิงก์ผิด)")
                 continue
 
-            # [แก้ไข] เพิ่มระยะเช็คย้อนหลังเป็น 100 (เผื่อ Reddit Fanart ถมข่าวจริงจนมิด)
+            # เช็คย้อนหลัง 100 ข่าว (เผื่อข่าวเก่า)
             check_limit = 100 
             
             for entry in feed.entries[:check_limit]:
@@ -91,7 +114,7 @@ def run_once():
                 # กรอง Reddit
                 if source['type'] == 'community':
                     if not is_interesting_reddit_post(entry):
-                        continue # ข้ามเงียบๆ
+                        continue 
                 
                 if news_id not in read_history:
                     print(f"     ✨ เจอข่าวใหม่! กำลังประมวลผล: {entry.title}")
