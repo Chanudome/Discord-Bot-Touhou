@@ -2,24 +2,25 @@
 # ฉบับคัดเน้นๆ: ข่าวทางการ + สินค้า + แฟนเกม (ตัด Steam และกระทู้ไร้สาระทิ้ง)
 
 RSS_SOURCES = [
-  # 1. Touhou Yomoyama (News)
+   # 1. Touhou Yomoyama (News)
     {
         "name": "Touhou Yomoyama (News)", 
-        # ใช้ index.php?feed=rss2 เพื่อเจาะเข้าถึง Core Feed โดยตรง
-        "url": "https://touhou-project.news/index.php?feed=rss2", 
+        # ลิงก์ที่ถูกต้องสำหรับเว็บนี้คือ feed.rss (ยืนยันจากหน้าเว็บ)
+        "url": "https://touhou-project.news/feed.rss", 
         "type": "official"
     },
     # 2. Touhou Station (Live & Events)
     {
         "name": "Touhou Station (Live & Events)", 
-        # ใช้ Query param '?tag=...' แทนการใช้ Path ยาวๆ (ลดโอกาส 404)
-        "url": "https://touhougarakuta.com/index.php?feed=rss2&tag=touhou_station", 
+        # ลองใช้โครงสร้างแบบ WordPress มาตรฐาน (มักจะใช้ได้กับ Garakuta)
+        "url": "https://touhougarakuta.com/tag/touhou_station/feed", 
         "type": "official"
     },
     # 3. Touhou Garakuta (Magazine)
     {
         "name": "Touhou Garakuta (Magazine)", 
-        "url": "https://touhougarakuta.com/index.php?feed=rss2", 
+        # ลิงก์มาตรฐาน
+        "url": "https://touhougarakuta.com/feed", 
         "type": "magazine"
     },
     # 4. ชุมชน Reddit (กรองเฉพาะ: ข่าว, สินค้า, เกม)
