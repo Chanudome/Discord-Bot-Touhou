@@ -11,7 +11,7 @@ RSS_SOURCES = [
    # 2. Touhou Garakuta (Magazine)
     {
         "name": "Touhou Garakuta (Magazine & Station)", 
-        "url": "https://touhougarakuta.com/feed.rss", 
+        "url": "https://touhougarakuta.com/index.xml", 
         "type": "magazine"
     },
     # 3. ชุมชน Reddit (กรองเฉพาะ: ข่าว, สินค้า, เกม)
