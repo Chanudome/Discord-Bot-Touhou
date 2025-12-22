@@ -8,13 +8,7 @@ RSS_SOURCES = [
         "url": "https://touhou-project.news/feed.rss", 
         "type": "official"
     },
-   # 2. Touhou Garakuta (Magazine)
-    {
-        "name": "Touhou Garakuta (Magazine & Station)", 
-        "url": "https://touhougarakuta.com/feed.xml", 
-        "type": "magazine"
-    },
-    # 3. ชุมชน Reddit (กรองเฉพาะ: ข่าว, สินค้า, เกม)
+    # 2. ชุมชน Reddit (กรองเฉพาะ: ข่าว, สินค้า, เกม)
     # ลิงก์นี้จะคัดเฉพาะกระทู้ที่มี Flair เป็น News, Merchandise, หรือ Game เท่านั้น
     {
         "name": "Reddit Touhou (News/Goods/Games)", 
