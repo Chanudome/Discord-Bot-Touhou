@@ -5,25 +5,16 @@ RSS_SOURCES = [
    # 1. Touhou Yomoyama (News)
     {
         "name": "Touhou Yomoyama (News)", 
-        # ลิงก์ที่ถูกต้องสำหรับเว็บนี้คือ feed.rss (ยืนยันจากหน้าเว็บ)
         "url": "https://touhou-project.news/feed.rss", 
         "type": "official"
     },
-    # 2. Touhou Station (Live & Events)
+   # 2. Touhou Garakuta (Magazine)
     {
-        "name": "Touhou Station (Live & Events)", 
-        # ลองใช้โครงสร้างแบบ WordPress มาตรฐาน (มักจะใช้ได้กับ Garakuta)
-        "url": "https://touhougarakuta.com/tag/touhou_station/feed", 
-        "type": "official"
-    },
-    # 3. Touhou Garakuta (Magazine)
-    {
-        "name": "Touhou Garakuta (Magazine)", 
-        # ลิงก์มาตรฐาน
-        "url": "https://touhougarakuta.com/feed", 
+        "name": "Touhou Garakuta (Magazine & Station)", 
+        "url": "https://touhougarakuta.com/feed.rss", 
         "type": "magazine"
     },
-    # 4. ชุมชน Reddit (กรองเฉพาะ: ข่าว, สินค้า, เกม)
+    # 3. ชุมชน Reddit (กรองเฉพาะ: ข่าว, สินค้า, เกม)
     # ลิงก์นี้จะคัดเฉพาะกระทู้ที่มี Flair เป็น News, Merchandise, หรือ Game เท่านั้น
     {
         "name": "Reddit Touhou (News/Goods/Games)", 
