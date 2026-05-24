@@ -1,4 +1,6 @@
 # Aya News Bot (อายะบอทส่งข่าว)
+---
+**Project Note:** โค้ดและโครงสร้างของโปรเจกต์นี้ (Aya News Bot) ได้รับการออกแบบและเขียนขึ้นโดยความช่วยเหลือจากปัญญาประดิษฐ์ (AI - Google Gemini)
 
 [🇬🇧 Click here for the English Version](#-english-version)
 
@@ -53,10 +55,14 @@
 
 ---
 
+> ⚠️ หมายเหตุ (Disclaimer): โปรเจกต์นี้ขับเคลื่อนด้วยปัญญาประดิษฐ์ (AI - Google Gemini) กระบวนการอ่าน สรุป และแปลข่าวสารทั้งหมดถูกสร้างขึ้นโดยอัตโนมัติโดยตัวแบบภาษา เนื้อหาหรือบริบทบางส่วนอาจมีความคลาดเคลื่อนจากต้นฉบับได้ โปรดใช้วิจารณญาณและอ้างอิงจากลิงก์ข่าวต้นฉบับประกอบการรับข่าวสารเสมอ
+
 <br>
 
 <a id="-english-version"></a>
 # Aya News Bot (English Version)
+---
+**Project Note:** The code and structure of this project were generated and structured with the assistance of AI (Google Gemini).
 
 An intelligent bot designed to track **Touhou Project** news from various sources, summarize it, translate it into Thai, and roleplay as the tengu reporter **Shameimaru Aya** from the Bunbunmaru Newspaper, delivering updates straight to your Discord server automatically!
 
